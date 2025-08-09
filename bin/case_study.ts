@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { CaseStudyStack } from '../lib/case_study-stack';
+import { CommunityHubStack } from '../lib/community-hub-stack';
+import { CdkChatConstruct} from '../lib/chat-construct';
+import { CdkPostsConstruct} from '../lib/posts-construct';
 
 const app = new cdk.App();
-new CaseStudyStack(app, 'CaseStudyStack', {
+new CommunityHubStack(app, 'CommunityHubStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -14,7 +16,10 @@ new CaseStudyStack(app, 'CaseStudyStack', {
 
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+  env: { account: '718579638605', region: 'eu-west-2' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+})
+
+/* new CdkChatConstruct(app, 'CdkChatStack', {env: { account: '718579638605', region: 'eu-west-2' }})
+new CdkPostsConstruct(app, 'CdkPostsStack', {env: { account: '718579638605', region: 'eu-west-2' }}); */
