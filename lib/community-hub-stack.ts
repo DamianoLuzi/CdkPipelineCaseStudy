@@ -2,14 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { CdkChatConstruct } from './chat-construct';
 import { CdkPostsConstruct} from './posts-construct';
+import { CdkAnalyticsConstruct } from './analytics-construct';
 
 export class CommunityHubStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    const postsApp = new CdkPostsConstruct(this, 'PostsConstruct');
 
-    // Create the chat application resources as a single construct
-    const chatApp = new CdkChatConstruct(this, 'ChatConstruct');
+    const analytics = new CdkAnalyticsConstruct(this, 'AnalyticsConstruct');
+    const postsApp = new CdkPostsConstruct(this, 'PostsConstruct');
+    const chatApp = new CdkChatConstruct(this, 'ChatConstruct', {
+      eventBus: analytics.eventBus,
+    });
 
     // =====================================================================
     //  Outputs for the frontend
@@ -25,7 +28,5 @@ export class CommunityHubStack extends cdk.Stack {
       value: chatApp.stage.url,
       description: 'The URL for the Chat WebSocket API',
     });
-    /* const postsStack = new CdkPostsStack(this, 'PostsStack');
-    const chatStack = new CdkChatStack(this, 'ChatStack'); */
   }
 }

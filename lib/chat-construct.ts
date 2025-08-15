@@ -5,18 +5,25 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as pipes from 'aws-cdk-lib/aws-pipes';
 
-//export class CdkChatStack extends cdk.Stack {
+interface CdkChatConstructProps extends cdk.StackProps {
+  eventBus: events.EventBus;
+}
 export class CdkChatConstruct extends Construct {
 
   public readonly chatApi: apigwv2.WebSocketApi;
-  public readonly stage: apigwv2.WebSocketStage
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id);
+  public readonly stage: apigwv2.WebSocketStage;
+  public readonly table: dynamodb.Table;
 
-    const table = new dynamodb.Table(this, 'ConnectionsTable', {
+  constructor(scope: Construct, id: string, props: CdkChatConstructProps) {
+    super(scope, id);
+    
+    this.table = new dynamodb.Table(this, 'ConnectionsTable', {
       partitionKey: { name: 'connectionId', type: dynamodb.AttributeType.STRING },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
     const makeLambda = (id: string, timeoutSec: number) => {
@@ -24,7 +31,7 @@ export class CdkChatConstruct extends Construct {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: `handler.lambda_handler`,
         code: lambda.Code.fromAsset(`lambda/${id}`),
-        environment: { TABLE_NAME: table.tableName},
+        environment: { TABLE_NAME: this.table.tableName},
         timeout: cdk.Duration.seconds(timeoutSec),
         architecture: lambda.Architecture.ARM_64,
         functionName: `${cdk.Stack.of(this).stackName}-${id}`,
@@ -35,16 +42,15 @@ export class CdkChatConstruct extends Construct {
     const sendMessageFn = makeLambda('sendmessage', 10);
     const disconnectFn = makeLambda('disconnect', 10);
   
-    table.grantWriteData(connectFn);
-    table.grantWriteData(disconnectFn);
-    table.grantReadWriteData(sendMessageFn);
+    this.table.grantWriteData(connectFn);
+    this.table.grantWriteData(disconnectFn);
+    this.table.grantReadWriteData(sendMessageFn);
 
     sendMessageFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['execute-api:ManageConnections'],
       resources: ['*'],
     }));
 
-    //const wsApi = new apigwv2.WebSocketApi(this, 'ChatApi', {
     this.chatApi  = new apigwv2.WebSocketApi(this, 'ChatApi', {
       apiName: `${cdk.Stack.of(this).stackName}-chat-api`,
       routeSelectionExpression: '$request.body.action',
@@ -56,12 +62,10 @@ export class CdkChatConstruct extends Construct {
       },
     });
 
-    //wsApi.addRoute('sendmessage', {
     this.chatApi.addRoute('sendmessage', {
       integration: new integrations.WebSocketLambdaIntegration('SendIntegration', sendMessageFn),
     });
 
-    //const stage = new apigwv2.WebSocketStage(this, 'ChatApiStage', {
     this.stage = new apigwv2.WebSocketStage(this, 'ChatApiStage', {
       webSocketApi: this.chatApi,
       stageName: 'production',
@@ -72,18 +76,61 @@ export class CdkChatConstruct extends Construct {
       fn.addPermission(`${fn.node.id}InvokePermission`, {
         principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
         action: 'lambda:InvokeFunction',
-        //sourceArn: `arn:aws:execute-api:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:${wsApi.apiId}/${stage.stageName}/*/*`,
         sourceArn: `arn:aws:execute-api:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:${this.chatApi.apiId}/${this.stage.stageName}/*/*`,
       });
     });
 
-
-    // CALLBACK_URL for send-message Lambda
-    //const apiDomain = `https://${wsApi.apiId}.execute-api.${cdk.Stack.of(this).region}.amazonaws.com/${stage.stageName}`;
     const apiDomain = `https://${this.chatApi.apiId}.execute-api.${cdk.Stack.of(this).region}.amazonaws.com/${this.stage.stageName}`;
     sendMessageFn.addEnvironment('CALLBACK_URL', apiDomain);
+
+
+    const pipeRole = new iam.Role(this, 'ChatStreamPipeRole', {
+      assumedBy: new iam.ServicePrincipal('pipes.amazonaws.com'),
+      inlinePolicies: {
+        PipePolicy: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                'dynamodb:DescribeStream',
+                'dynamodb:GetRecords',
+                'dynamodb:GetShardIterator',
+                'dynamodb:ListStreams',
+              ],
+              resources: [this.table.tableStreamArn!],
+            }),
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: ['events:PutEvents'],
+              resources: [props.eventBus.eventBusArn],
+            }),
+          ],
+        }),
+      },
+    });
+
+    new pipes.CfnPipe(this, 'ChatStreamPipe', {
+      name: `${cdk.Stack.of(this).stackName}-chat-stream-pipe`,
+      roleArn: pipeRole.roleArn,
+      source: this.table.tableStreamArn!,
+      target: props.eventBus.eventBusArn,
+      sourceParameters: {
+        dynamoDbStreamParameters: {
+          startingPosition: 'LATEST',
+          batchSize: 10,
+          maximumBatchingWindowInSeconds: 5,
+        },
+      },
+      targetParameters: {
+        eventBridgeEventBusParameters: {
+          detailType: 'DynamoDB Stream Record',
+          source: 'chat.service',
+        },
+      },
+    });
   }
 }
+
 
 
 

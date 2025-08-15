@@ -7,7 +7,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 
-//export class CdkPostsStack extends cdk.Stack {
+
 export class CdkPostsConstruct extends Construct {
   public readonly postsApi: apigateway.RestApi;
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -37,7 +37,6 @@ export class CdkPostsConstruct extends Construct {
       })
     );
 
-    // Lambda Function
     const postAnalysisFn = new lambda.Function(this, 'AnalyzePostContentFunction', {
       functionName: 'postModerationFunction',
       runtime: lambda.Runtime.PYTHON_3_13,
@@ -67,8 +66,6 @@ export class CdkPostsConstruct extends Construct {
       }
     });
 
-    // API Gateway
-    //const api = new apigateway.RestApi(this, 'PostsApi', {
     this.postsApi = new apigateway.RestApi(this, 'PostsApi', {
       restApiName: 'PostsAPI',
       defaultCorsPreflightOptions: {
@@ -98,11 +95,9 @@ export class CdkPostsConstruct extends Construct {
       })
     );
 
-    // Grant API Gateway permission to invoke Lambda
     postAnalysisFn.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));
     fetchPostsFn.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));
 
-    // Output the API endpoint
     new CfnOutput(this, 'CustomerReviewEndpoint', {
       value: `${this.postsApi.url}review`,
     });
