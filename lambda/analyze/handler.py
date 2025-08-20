@@ -114,7 +114,6 @@ def lambda_handler(event, context):
 
         toxicity_score = response['ResultList'][0]['Toxicity']
 
-        #  Check the toxicity score (example threshold)
         if toxicity_score > 0.7:
             return {
                 "statusCode": 400,
@@ -122,14 +121,13 @@ def lambda_handler(event, context):
                 "body": json.dumps({"error": "Post content is too toxic and cannot be published."})
             }
         
-        # 3. Save the post to DynamoDB
         postId = str(uuid4())
         createdAt = datetime.now().isoformat()
         
         table.put_item(Item={
             'postId': postId,
             'createdAt': createdAt,
-            'GSI_PK': 'posts', # Static value for the GSI partition key
+            'GSI_PK': 'posts',
             'content': content,
             'author': author,
             'toxicityScore': Decimal(str(toxicity_score)), # 💡 FIX: Convert the float to a Decimal before saving,
@@ -166,13 +164,3 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"error": "Failed to analyze sentiment"})
         }
-
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Methods": "POST,OPTIONS"
-        },
-        "body": json.dumps(response)
-    }

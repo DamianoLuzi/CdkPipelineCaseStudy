@@ -5,18 +5,23 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as pipes from 'aws-cdk-lib/aws-pipes';
 
-
+interface CdkPostsConstructProps extends cdk.StackProps {
+  eventBus: events.EventBus;
+}
 export class CdkPostsConstruct extends Construct {
   public readonly postsApi: apigateway.RestApi;
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  public readonly postsTable: dynamodb.Table;
+  constructor(scope: Construct, id: string, props: CdkPostsConstructProps) {
     super(scope, id);
 
-    const table = new dynamodb.Table(this, 'PostsTable', {
+    this.postsTable = new dynamodb.Table(this, 'PostsTable', {
       partitionKey: { name: 'postId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
       removalPolicy: cdk.RemovalPolicy.DESTROY, 
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
     const comprehendRole = new iam.Role(this, 'PostsLambdaRole', {
@@ -47,7 +52,7 @@ export class CdkPostsConstruct extends Construct {
       timeout: Duration.seconds(3),
       role: comprehendRole,
       environment: {
-        TABLE_NAME: table.tableName,
+        TABLE_NAME: this.postsTable.tableName,
         REGION: cdk.Stack.of(this).region
       }
     });
@@ -61,7 +66,7 @@ export class CdkPostsConstruct extends Construct {
       timeout: Duration.seconds(3),
       role: comprehendRole,
       environment: {
-        TABLE_NAME: table.tableName,
+        TABLE_NAME: this.postsTable.tableName,
         REGION: cdk.Stack.of(this).region
       }
     });
@@ -78,8 +83,8 @@ export class CdkPostsConstruct extends Construct {
       },
     });
 
-    table.grantWriteData(postAnalysisFn);
-    table.grantReadData(fetchPostsFn);
+    this.postsTable.grantWriteData(postAnalysisFn);
+    this.postsTable.grantReadData(fetchPostsFn);
 
     const apiResource = this.postsApi.root.addResource('posts');
     apiResource.addMethod(
@@ -102,12 +107,48 @@ export class CdkPostsConstruct extends Construct {
       value: `${this.postsApi.url}review`,
     });
 
-    // The code that defines your stack goes here
+    const pipeRole = new iam.Role(this, 'PostsStreamPipeRole', {
+      assumedBy: new iam.ServicePrincipal('pipes.amazonaws.com'),
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'CdkSentimentAnalysisAppQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    // Add necessary permissions for the pipe to read from the DynamoDB stream
+    pipeRole.addToPolicy(
+        new iam.PolicyStatement({
+            actions: [
+                'dynamodb:DescribeStream',
+                'dynamodb:GetRecords',
+                'dynamodb:GetShardIterator',
+                'dynamodb:ListStreams',
+            ],
+            resources: [this.postsTable.tableStreamArn!],
+        })
+    );
+    pipeRole.addToPolicy(
+      new iam.PolicyStatement({
+          actions: ['events:PutEvents'],
+          resources: [props.eventBus.eventBusArn],
+      })
+    );
+
+    new pipes.CfnPipe(this, 'PostsStreamPipe', {
+      name: `${cdk.Stack.of(this).stackName}-posts-stream-pipe`,
+      roleArn: pipeRole.roleArn,
+      source: this.postsTable.tableStreamArn!,
+      target: props.eventBus.eventBusArn,
+      sourceParameters: {
+        dynamoDbStreamParameters: {
+          startingPosition: 'LATEST',
+          batchSize: 10,
+          maximumBatchingWindowInSeconds: 5,
+        },
+      },
+      targetParameters: {
+        eventBridgeEventBusParameters: {
+          detailType: 'DynamoDB Stream Record',
+          source: 'posts.service',
+        },
+      },
+    });
   }
 }
 
