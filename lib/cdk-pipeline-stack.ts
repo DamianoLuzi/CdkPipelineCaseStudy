@@ -32,11 +32,12 @@ export class CdkPipelineStack extends cdk.Stack {
     new PipelineStage(
       this, 'DEV', {env: { account: '799201157016', region: 'eu-west-3' }})
   )
-  /*
+
   pipeline.addStage(
   new PipelineStage(
-    this, 'STG', {env: { account: '718579638605', region: 'us-east-1' }})
+    this, 'STG', {env: { account: '351323459405', region: 'eu-central-1' }})
   )
+  /*
   const prdWave = pipeline.addWave('PRD')
   prdWave.addStage(
     new PipelineStage(
