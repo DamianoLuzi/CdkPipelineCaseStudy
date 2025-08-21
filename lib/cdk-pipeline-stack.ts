@@ -22,6 +22,7 @@ export class CdkPipelineStack extends cdk.Stack {
         commands: [
           'npm ci',
           'npm run build',
+          'npm test',
           'npx cdk synth',
         ],
       }),

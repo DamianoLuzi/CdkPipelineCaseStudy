@@ -21,6 +21,3 @@ new CdkPipelineStack(app, 'CdkCaseStudyPipelineStack', {
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 })
-
-/* new CdkChatConstruct(app, 'CdkChatStack', {env: { account: '718579638605', region: 'eu-west-2' }})
-new CdkPostsConstruct(app, 'CdkPostsStack', {env: { account: '718579638605', region: 'eu-west-2' }}); */
