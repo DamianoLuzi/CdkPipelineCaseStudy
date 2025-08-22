@@ -1,0 +1,33 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "7131a84a4415494610e808e07b00bedc7d2578a973f5069309ad6a8a74cf00db": {
+      "source": {
+        "path": "asset.7131a84a4415494610e808e07b00bedc7d2578a973f5069309ad6a8a74cf00db.bundle",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-99e46378": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "7131a84a4415494610e808e07b00bedc7d2578a973f5069309ad6a8a74cf00db.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "b4b98fc519049211b5b3dd9f2d508e2d0b5c9915e89d73a62c69dc58ef024890": {
+      "displayName": "ChatIntegTestDefaultTestDeployAssert9F6FDF47 Template",
+      "source": {
+        "path": "ChatIntegTestDefaultTestDeployAssert9F6FDF47.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-2e94901f": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "b4b98fc519049211b5b3dd9f2d508e2d0b5c9915e89d73a62c69dc58ef024890.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

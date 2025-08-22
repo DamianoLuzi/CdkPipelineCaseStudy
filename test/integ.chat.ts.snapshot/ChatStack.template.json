@@ -1,0 +1,1488 @@
+{
+ "Resources": {
+  "AnalyticsConstructAnalyticsBus64996195": {
+   "Type": "AWS::Events::EventBus",
+   "Properties": {
+    "Name": "AnalyticsBus"
+   }
+  },
+  "AnalyticsConstructAnalyticsQueueB20AE075": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "MessageRetentionPeriod": 345600,
+    "VisibilityTimeout": 1800
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  },
+  "AnalyticsConstructAnalyticsQueuePolicy5CA961B4": {
+   "Type": "AWS::SQS::QueuePolicy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:SendMessage"
+       ],
+       "Condition": {
+        "ArnEquals": {
+         "aws:SourceArn": {
+          "Fn::GetAtt": [
+           "AnalyticsConstructPostsEventRuleC00CCA8E",
+           "Arn"
+          ]
+         }
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::GetAtt": [
+         "AnalyticsConstructAnalyticsQueueB20AE075",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:SendMessage"
+       ],
+       "Condition": {
+        "ArnEquals": {
+         "aws:SourceArn": {
+          "Fn::GetAtt": [
+           "AnalyticsConstructChatEventRuleAB1DDC89",
+           "Arn"
+          ]
+         }
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::GetAtt": [
+         "AnalyticsConstructAnalyticsQueueB20AE075",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:SendMessage"
+       ],
+       "Condition": {
+        "ArnEquals": {
+         "aws:SourceArn": {
+          "Fn::GetAtt": [
+           "AnalyticsConstructChatMessageEventRule22A56BF7",
+           "Arn"
+          ]
+         }
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::GetAtt": [
+         "AnalyticsConstructAnalyticsQueueB20AE075",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Queues": [
+     {
+      "Ref": "AnalyticsConstructAnalyticsQueueB20AE075"
+     }
+    ]
+   }
+  },
+  "AnalyticsConstructAnalyticsDLQ5CCE1851": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "MessageRetentionPeriod": 1209600
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  },
+  "AnalyticsConstructAnalyticsBucketABF80E72": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  },
+  "AnalyticsConstructAnalyticsBucketPolicy5333F73A": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "AnalyticsConstructAnalyticsBucketABF80E72"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:PutBucketPolicy"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AnalyticsConstructAnalyticsBucketABF80E72",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AnalyticsConstructAnalyticsBucketABF80E72",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   }
+  },
+  "AnalyticsConstructAnalyticsBucketAutoDeleteObjectsCustomResource320F9619": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "AnalyticsConstructAnalyticsBucketABF80E72"
+    }
+   },
+   "DependsOn": [
+    "AnalyticsConstructAnalyticsBucketPolicy5333F73A"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  },
+  "AnalyticsConstructAnalyticsProcessorServiceRole0A3D8D4F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   }
+  },
+  "AnalyticsConstructAnalyticsProcessorServiceRoleDefaultPolicy76AC4F3A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sqs:SendMessage",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AnalyticsConstructAnalyticsDLQ5CCE1851",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:ChangeMessageVisibility",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:ReceiveMessage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AnalyticsConstructAnalyticsQueueB20AE075",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "s3:Abort*",
+        "s3:DeleteObject*",
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AnalyticsConstructAnalyticsBucketABF80E72",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AnalyticsConstructAnalyticsBucketABF80E72",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "AnalyticsConstructAnalyticsProcessorServiceRoleDefaultPolicy76AC4F3A",
+    "Roles": [
+     {
+      "Ref": "AnalyticsConstructAnalyticsProcessorServiceRole0A3D8D4F"
+     }
+    ]
+   }
+  },
+  "AnalyticsConstructAnalyticsProcessor1896E782": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "\nimport os\ndef lambda_handler(event, context):\n    print('## EVENT')\n    print(event)\n        "
+    },
+    "DeadLetterConfig": {
+     "TargetArn": {
+      "Fn::GetAtt": [
+       "AnalyticsConstructAnalyticsDLQ5CCE1851",
+       "Arn"
+      ]
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "BUCKET_NAME": {
+       "Ref": "AnalyticsConstructAnalyticsBucketABF80E72"
+      }
+     }
+    },
+    "Handler": "index.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "AnalyticsConstructAnalyticsProcessorServiceRole0A3D8D4F",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.13",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "AnalyticsConstructAnalyticsProcessorServiceRoleDefaultPolicy76AC4F3A",
+    "AnalyticsConstructAnalyticsProcessorServiceRole0A3D8D4F"
+   ]
+  },
+  "AnalyticsConstructAnalyticsProcessorLogGroup90B3EECF": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "AnalyticsConstructAnalyticsProcessor1896E782"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 731
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain"
+  },
+  "AnalyticsConstructAnalyticsProcessorSqsEventSourceChatStackAnalyticsConstructAnalyticsQueueC6200B87F18916F2": {
+   "Type": "AWS::Lambda::EventSourceMapping",
+   "Properties": {
+    "BatchSize": 10,
+    "EventSourceArn": {
+     "Fn::GetAtt": [
+      "AnalyticsConstructAnalyticsQueueB20AE075",
+      "Arn"
+     ]
+    },
+    "FunctionName": {
+     "Ref": "AnalyticsConstructAnalyticsProcessor1896E782"
+    },
+    "FunctionResponseTypes": [
+     "ReportBatchItemFailures"
+    ],
+    "MaximumBatchingWindowInSeconds": 10
+   }
+  },
+  "AnalyticsConstructPostsEventRuleC00CCA8E": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventBusName": {
+     "Ref": "AnalyticsConstructAnalyticsBus64996195"
+    },
+    "EventPattern": {
+     "source": [
+      "posts.service"
+     ],
+     "detail-type": [
+      "PostCreated"
+     ]
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "AnalyticsConstructAnalyticsQueueB20AE075",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   }
+  },
+  "AnalyticsConstructChatEventRuleAB1DDC89": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventBusName": {
+     "Ref": "AnalyticsConstructAnalyticsBus64996195"
+    },
+    "EventPattern": {
+     "source": [
+      "chat.service"
+     ],
+     "detail-type": [
+      "DynamoDB Stream Record"
+     ]
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "AnalyticsConstructAnalyticsQueueB20AE075",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   }
+  },
+  "AnalyticsConstructChatMessageEventRule22A56BF7": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventBusName": {
+     "Ref": "AnalyticsConstructAnalyticsBus64996195"
+    },
+    "EventPattern": {
+     "source": [
+      "chat.service"
+     ],
+     "detail-type": [
+      "MessageSent",
+      "UserConnected",
+      "UserDisconnected"
+     ]
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "AnalyticsConstructAnalyticsQueueB20AE075",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "AnalyticsConstructAnalyticsBucketABF80E72"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ]
+  },
+  "ChatConstructConnectionsTableC829605F": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "connectionId",
+      "AttributeType": "S"
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "connectionId",
+      "KeyType": "HASH"
+     }
+    ],
+    "ProvisionedThroughput": {
+     "ReadCapacityUnits": 5,
+     "WriteCapacityUnits": 5
+    },
+    "StreamSpecification": {
+     "StreamViewType": "NEW_AND_OLD_IMAGES"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  },
+  "ChatConstructconnectServiceRoleD6C11A50": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   }
+  },
+  "ChatConstructconnectServiceRoleDefaultPolicyBDFC29DF": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ChatConstructConnectionsTableC829605F",
+          "Arn"
+         ]
+        },
+        {
+         "Ref": "AWS::NoValue"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatConstructconnectServiceRoleDefaultPolicyBDFC29DF",
+    "Roles": [
+     {
+      "Ref": "ChatConstructconnectServiceRoleD6C11A50"
+     }
+    ]
+   }
+  },
+  "ChatConstructconnect4B5073AB": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "arm64"
+    ],
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "9787502bd3ebea7d37de8028076646129a88189f71543d82df9fdb62f16f33f5.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TABLE_NAME": {
+       "Ref": "ChatConstructConnectionsTableC829605F"
+      }
+     }
+    },
+    "FunctionName": "ChatStack-connect",
+    "Handler": "handler.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "ChatConstructconnectServiceRoleD6C11A50",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.13",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "ChatConstructconnectServiceRoleDefaultPolicyBDFC29DF",
+    "ChatConstructconnectServiceRoleD6C11A50"
+   ]
+  },
+  "ChatConstructconnectLogGroupEA6B9CDD": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "ChatConstructconnect4B5073AB"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 731
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain"
+  },
+  "ChatConstructconnectconnectInvokePermission9F6C3809": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ChatConstructconnect4B5073AB",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "ChatConstructChatApiE2093AA7"
+       },
+       "/production/*/*"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructsendmessageServiceRoleEBF09C04": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   }
+  },
+  "ChatConstructsendmessageServiceRoleDefaultPolicy9DCA8C17": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ChatConstructConnectionsTableC829605F",
+          "Arn"
+         ]
+        },
+        {
+         "Ref": "AWS::NoValue"
+        }
+       ]
+      },
+      {
+       "Action": "execute-api:ManageConnections",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatConstructsendmessageServiceRoleDefaultPolicy9DCA8C17",
+    "Roles": [
+     {
+      "Ref": "ChatConstructsendmessageServiceRoleEBF09C04"
+     }
+    ]
+   }
+  },
+  "ChatConstructsendmessage212CB28F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "arm64"
+    ],
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "681f5490d6b9dd016e0957ea4af24827b6daa767ac65ab7abbe1c56b78911c66.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TABLE_NAME": {
+       "Ref": "ChatConstructConnectionsTableC829605F"
+      },
+      "CALLBACK_URL": {
+       "Fn::Join": [
+        "",
+        [
+         "https://",
+         {
+          "Ref": "ChatConstructChatApiE2093AA7"
+         },
+         ".execute-api.",
+         {
+          "Ref": "AWS::Region"
+         },
+         ".amazonaws.com/production"
+        ]
+       ]
+      }
+     }
+    },
+    "FunctionName": "ChatStack-sendmessage",
+    "Handler": "handler.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "ChatConstructsendmessageServiceRoleEBF09C04",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.13",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "ChatConstructsendmessageServiceRoleDefaultPolicy9DCA8C17",
+    "ChatConstructsendmessageServiceRoleEBF09C04"
+   ]
+  },
+  "ChatConstructsendmessageLogGroup0CD14181": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "ChatConstructsendmessage212CB28F"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 731
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain"
+  },
+  "ChatConstructsendmessagesendmessageInvokePermissionC328D148": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ChatConstructsendmessage212CB28F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "ChatConstructChatApiE2093AA7"
+       },
+       "/production/*/*"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructdisconnectServiceRole0A1C4400": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   }
+  },
+  "ChatConstructdisconnectServiceRoleDefaultPolicy58B91410": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ChatConstructConnectionsTableC829605F",
+          "Arn"
+         ]
+        },
+        {
+         "Ref": "AWS::NoValue"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatConstructdisconnectServiceRoleDefaultPolicy58B91410",
+    "Roles": [
+     {
+      "Ref": "ChatConstructdisconnectServiceRole0A1C4400"
+     }
+    ]
+   }
+  },
+  "ChatConstructdisconnect68AF3F9B": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "arm64"
+    ],
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "83296e004ee273bd43dd9675bb8dd0f48cb6f1731371fe131789c71a3f19f55d.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TABLE_NAME": {
+       "Ref": "ChatConstructConnectionsTableC829605F"
+      }
+     }
+    },
+    "FunctionName": "ChatStack-disconnect",
+    "Handler": "handler.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "ChatConstructdisconnectServiceRole0A1C4400",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.13",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "ChatConstructdisconnectServiceRoleDefaultPolicy58B91410",
+    "ChatConstructdisconnectServiceRole0A1C4400"
+   ]
+  },
+  "ChatConstructdisconnectLogGroupECC56EC1": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "ChatConstructdisconnect68AF3F9B"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 731
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain"
+  },
+  "ChatConstructdisconnectdisconnectInvokePermissionFD8F779D": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ChatConstructdisconnect68AF3F9B",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "ChatConstructChatApiE2093AA7"
+       },
+       "/production/*/*"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApiE2093AA7": {
+   "Type": "AWS::ApiGatewayV2::Api",
+   "Properties": {
+    "Name": "ChatStack-chat-api",
+    "ProtocolType": "WEBSOCKET",
+    "RouteSelectionExpression": "$request.body.action"
+   }
+  },
+  "ChatConstructChatApiconnectRouteConnectIntegrationPermissionF72C15E9": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ChatConstructconnect4B5073AB",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "ChatConstructChatApiE2093AA7"
+       },
+       "/*$connect"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApiconnectRouteConnectIntegration0D962962": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ChatConstructconnect4B5073AB",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApiconnectRoute321C2284": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$connect",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "ChatConstructChatApiconnectRouteConnectIntegration0D962962"
+       }
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApidisconnectRouteDisconnectIntegrationPermission70DDCCB2": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ChatConstructdisconnect68AF3F9B",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "ChatConstructChatApiE2093AA7"
+       },
+       "/*$disconnect"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApidisconnectRouteDisconnectIntegration678A3D36": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ChatConstructdisconnect68AF3F9B",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApidisconnectRouteA883CFCE": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$disconnect",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "ChatConstructChatApidisconnectRouteDisconnectIntegration678A3D36"
+       }
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApisendmessageRouteSendIntegrationPermissionEFF2FC03": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ChatConstructsendmessage212CB28F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "ChatConstructChatApiE2093AA7"
+       },
+       "/*sendmessage"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApisendmessageRouteSendIntegration717F15ED": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ChatConstructsendmessage212CB28F",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApisendmessageRoute2DA70EEB": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "sendmessage",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "ChatConstructChatApisendmessageRouteSendIntegration717F15ED"
+       }
+      ]
+     ]
+    }
+   }
+  },
+  "ChatConstructChatApiStage638136B7": {
+   "Type": "AWS::ApiGatewayV2::Stage",
+   "Properties": {
+    "ApiId": {
+     "Ref": "ChatConstructChatApiE2093AA7"
+    },
+    "AutoDeploy": true,
+    "StageName": "production"
+   }
+  },
+  "ChatConstructChatStreamPipeRole8D5FD199": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "pipes.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Policies": [
+     {
+      "PolicyDocument": {
+       "Statement": [
+        {
+         "Action": [
+          "dynamodb:DescribeStream",
+          "dynamodb:GetRecords",
+          "dynamodb:GetShardIterator",
+          "dynamodb:ListStreams"
+         ],
+         "Effect": "Allow",
+         "Resource": {
+          "Fn::GetAtt": [
+           "ChatConstructConnectionsTableC829605F",
+           "StreamArn"
+          ]
+         }
+        },
+        {
+         "Action": "events:PutEvents",
+         "Effect": "Allow",
+         "Resource": {
+          "Fn::GetAtt": [
+           "AnalyticsConstructAnalyticsBus64996195",
+           "Arn"
+          ]
+         }
+        }
+       ],
+       "Version": "2012-10-17"
+      },
+      "PolicyName": "PipePolicy"
+     }
+    ]
+   }
+  },
+  "ChatConstructChatStreamPipe496A32B6": {
+   "Type": "AWS::Pipes::Pipe",
+   "Properties": {
+    "Name": "ChatStack-chat-stream-pipe",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "ChatConstructChatStreamPipeRole8D5FD199",
+      "Arn"
+     ]
+    },
+    "Source": {
+     "Fn::GetAtt": [
+      "ChatConstructConnectionsTableC829605F",
+      "StreamArn"
+     ]
+    },
+    "SourceParameters": {
+     "DynamoDBStreamParameters": {
+      "BatchSize": 10,
+      "MaximumBatchingWindowInSeconds": 5,
+      "StartingPosition": "LATEST"
+     }
+    },
+    "Target": {
+     "Fn::GetAtt": [
+      "AnalyticsConstructAnalyticsBus64996195",
+      "Arn"
+     ]
+    },
+    "TargetParameters": {
+     "EventBridgeEventBusParameters": {
+      "DetailType": "DynamoDB Stream Record",
+      "Source": "chat.service"
+     }
+    }
+   }
+  }
+ },
+ "Outputs": {
+  "ExportsOutputRefChatConstructconnect4B5073AB960E50A6": {
+   "Value": {
+    "Ref": "ChatConstructconnect4B5073AB"
+   },
+   "Export": {
+    "Name": "ChatStack:ExportsOutputRefChatConstructconnect4B5073AB960E50A6"
+   }
+  },
+  "ExportsOutputRefChatConstructdisconnect68AF3F9B851D6E04": {
+   "Value": {
+    "Ref": "ChatConstructdisconnect68AF3F9B"
+   },
+   "Export": {
+    "Name": "ChatStack:ExportsOutputRefChatConstructdisconnect68AF3F9B851D6E04"
+   }
+  },
+  "ExportsOutputRefChatConstructConnectionsTableC829605F00D02450": {
+   "Value": {
+    "Ref": "ChatConstructConnectionsTableC829605F"
+   },
+   "Export": {
+    "Name": "ChatStack:ExportsOutputRefChatConstructConnectionsTableC829605F00D02450"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

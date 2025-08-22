@@ -1,0 +1,76 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6": {
+      "displayName": "ChatStack/Custom::S3AutoDeleteObjectsCustomResourceProvider Code",
+      "source": {
+        "path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-e31788a2": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "9787502bd3ebea7d37de8028076646129a88189f71543d82df9fdb62f16f33f5": {
+      "displayName": "ChatConstruct/connect/Code",
+      "source": {
+        "path": "asset.9787502bd3ebea7d37de8028076646129a88189f71543d82df9fdb62f16f33f5",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-8cfd59b1": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "9787502bd3ebea7d37de8028076646129a88189f71543d82df9fdb62f16f33f5.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "681f5490d6b9dd016e0957ea4af24827b6daa767ac65ab7abbe1c56b78911c66": {
+      "displayName": "ChatConstruct/sendmessage/Code",
+      "source": {
+        "path": "asset.681f5490d6b9dd016e0957ea4af24827b6daa767ac65ab7abbe1c56b78911c66",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-7a000719": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "681f5490d6b9dd016e0957ea4af24827b6daa767ac65ab7abbe1c56b78911c66.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "83296e004ee273bd43dd9675bb8dd0f48cb6f1731371fe131789c71a3f19f55d": {
+      "displayName": "ChatConstruct/disconnect/Code",
+      "source": {
+        "path": "asset.83296e004ee273bd43dd9675bb8dd0f48cb6f1731371fe131789c71a3f19f55d",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-c5ebad77": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "83296e004ee273bd43dd9675bb8dd0f48cb6f1731371fe131789c71a3f19f55d.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "91bf9d5c1985f5b45252a8179887abcdae1c0ddbe3023b8decddfd1703595b1f": {
+      "displayName": "ChatStack Template",
+      "source": {
+        "path": "ChatStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-fdac2cbe": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "91bf9d5c1985f5b45252a8179887abcdae1c0ddbe3023b8decddfd1703595b1f.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

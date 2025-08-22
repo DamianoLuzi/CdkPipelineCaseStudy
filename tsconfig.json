@@ -6,7 +6,12 @@
     "lib": [
       "es2022"
     ],
+    "outDir": "dist",
+    "declarationDir": "dist/types",
+    "emitDeclarationOnly": false,
+    "rootDir": ".",
     "declaration": true,
+    "isolatedModules": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

@@ -7,7 +7,7 @@ import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as pipes from 'aws-cdk-lib/aws-pipes';
-
+import * as path from 'path';
 interface CdkChatConstructProps extends cdk.StackProps {
   eventBus: events.EventBus;
 }
@@ -16,6 +16,9 @@ export class CdkChatConstruct extends Construct {
   public readonly chatApi: apigwv2.WebSocketApi;
   public readonly stage: apigwv2.WebSocketStage;
   public readonly table: dynamodb.Table;
+  public readonly sendMessageLambda: lambda.Function;
+  public readonly connectLambda: lambda.Function;
+  public readonly disconnectLambda: lambda.Function;
 
   constructor(scope: Construct, id: string, props: CdkChatConstructProps) {
     super(scope, id);
@@ -30,7 +33,8 @@ export class CdkChatConstruct extends Construct {
       return new lambda.Function(this, id, {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: `handler.lambda_handler`,
-        code: lambda.Code.fromAsset(`lambda/${id}`),
+        //code: lambda.Code.fromAsset(`lambda/${id}`),
+        code: lambda.Code.fromAsset(path.join(__dirname, '..', `lambda/${id}`)),
         environment: { TABLE_NAME: this.table.tableName},
         timeout: cdk.Duration.seconds(timeoutSec),
         architecture: lambda.Architecture.ARM_64,
@@ -38,15 +42,15 @@ export class CdkChatConstruct extends Construct {
       });
     };
 
-    const connectFn = makeLambda('connect', 10);
-    const sendMessageFn = makeLambda('sendmessage', 10);
-    const disconnectFn = makeLambda('disconnect', 10);
+    this.connectLambda = makeLambda('connect', 10);
+    this.sendMessageLambda = makeLambda('sendmessage', 10);
+    this.disconnectLambda = makeLambda('disconnect', 10);
   
-    this.table.grantWriteData(connectFn);
-    this.table.grantWriteData(disconnectFn);
-    this.table.grantReadWriteData(sendMessageFn);
+    this.table.grantWriteData(this.connectLambda);
+    this.table.grantWriteData(this.disconnectLambda);
+    this.table.grantReadWriteData(this.sendMessageLambda);
 
-    sendMessageFn.addToRolePolicy(new iam.PolicyStatement({
+    this.sendMessageLambda.addToRolePolicy(new iam.PolicyStatement({
       actions: ['execute-api:ManageConnections'],
       resources: ['*'],
     }));
@@ -55,15 +59,15 @@ export class CdkChatConstruct extends Construct {
       apiName: `${cdk.Stack.of(this).stackName}-chat-api`,
       routeSelectionExpression: '$request.body.action',
       connectRouteOptions: {
-        integration: new integrations.WebSocketLambdaIntegration('ConnectIntegration', connectFn),
+        integration: new integrations.WebSocketLambdaIntegration('ConnectIntegration', this.connectLambda),
       },
       disconnectRouteOptions: {
-        integration: new integrations.WebSocketLambdaIntegration('DisconnectIntegration', disconnectFn),
+        integration: new integrations.WebSocketLambdaIntegration('DisconnectIntegration', this.disconnectLambda),
       },
     });
 
     this.chatApi.addRoute('sendmessage', {
-      integration: new integrations.WebSocketLambdaIntegration('SendIntegration', sendMessageFn),
+      integration: new integrations.WebSocketLambdaIntegration('SendIntegration', this.sendMessageLambda),
     });
 
     this.stage = new apigwv2.WebSocketStage(this, 'ChatApiStage', {
@@ -72,7 +76,7 @@ export class CdkChatConstruct extends Construct {
       autoDeploy: true,
     });
 
-    [connectFn, disconnectFn, sendMessageFn].forEach(fn => {
+    [this.connectLambda, this.disconnectLambda, this.sendMessageLambda].forEach(fn => {
       fn.addPermission(`${fn.node.id}InvokePermission`, {
         principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
         action: 'lambda:InvokeFunction',
@@ -81,7 +85,7 @@ export class CdkChatConstruct extends Construct {
     });
 
     const apiDomain = `https://${this.chatApi.apiId}.execute-api.${cdk.Stack.of(this).region}.amazonaws.com/${this.stage.stageName}`;
-    sendMessageFn.addEnvironment('CALLBACK_URL', apiDomain);
+    this.sendMessageLambda.addEnvironment('CALLBACK_URL', apiDomain);
 
 
     const pipeRole = new iam.Role(this, 'ChatStreamPipeRole', {
