@@ -13,6 +13,7 @@ table = dynamodb.Table(os.environ['TABLE_NAME'])
 
 def send_message(apigw, connection_id, message_data):
     try:
+        logger.info(f"Sending message to {connection_id}")
         apigw.post_to_connection(
             ConnectionId=connection_id,
             Data=message_data.encode('utf-8')
@@ -40,7 +41,7 @@ def lambda_handler(event, context):
     stage = event['requestContext']['stage']
     endpoint = f"https://{domain}/{stage}"
     apigw = boto3.client('apigatewaymanagementapi', endpoint_url=endpoint)
-
+    logger.info(f"Broadcasting message to {endpoint}")
     with ThreadPoolExecutor(max_workers=20) as executor:
         futures = [
             executor.submit(send_message, apigw, item['connectionId'], message_data)
