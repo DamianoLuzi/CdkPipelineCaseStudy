@@ -49,11 +49,13 @@ export class CdkPipelineStack extends cdk.Stack {
           commands: [
             'npm ci',
             'npm run integ',
-            'POSTS_API_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query "Stacks[0].Outputs[?OutputKey==`PostsApiUrl`].OutputValue" --output text)',
-            'CHAT_WS_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query "Stacks[0].Outputs[?OutputKey==`ChatApiUrl`].OutputValue" --output text)',
-            'echo "Testing REST API endpoint..."',
+            'POSTS_API_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query \'Stacks[0].Outputs[?OutputKey==`PostsApiUrl`].OutputValue\' --output text)',
+            'CHAT_WS_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query \'Stacks[0].Outputs[?OutputKey==`ChatApiUrl`].OutputValue\' --output text)',
+
+            'echo "Posts API URL: $POSTS_API_URL"',
+            'echo "Chat WS URL: $CHAT_WS_URL"',
+
             'curl -s -o /dev/null -w "%{http_code}" $POSTS_API_URL/posts | grep 200',
-            'echo "Testing WebSocket connection..."',
             'npx wscat -c $CHAT_WS_URL -x \'{"action":"sendmessage","message":"hello"}\'',
           ],
         }),
