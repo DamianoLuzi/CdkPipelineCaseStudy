@@ -22,7 +22,7 @@ export class CdkPipelineStack extends cdk.Stack {
         commands: [
           'npm ci',
           'npm run build',
-          'npm test',
+          //'npm test',
           'npx cdk synth',
         ],
       }),
@@ -30,7 +30,17 @@ export class CdkPipelineStack extends cdk.Stack {
     });
 
     const devStage =  new PipelineStage(this, 'DEV', {env: { account: '799201157016', region: 'eu-west-3' }});
-    pipeline.addStage(devStage);
+
+    pipeline.addStage(devStage, {
+      pre: [
+        new ShellStep('UnitTests', {
+          commands: [
+            'npm ci',
+            'npm test',
+          ],
+        }),
+      ],
+    });
 
     const stgStage = new PipelineStage(this, 'STG', {env: { account: '351323459405', region: 'eu-central-1' }})
     pipeline.addStage(stgStage, {
@@ -39,6 +49,12 @@ export class CdkPipelineStack extends cdk.Stack {
           commands: [
             'npm ci',
             'npm run integ',
+            'POSTS_API_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query "Stacks[0].Outputs[?OutputKey==`PostsApiUrl`].OutputValue" --output text)',
+            'CHAT_WS_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query "Stacks[0].Outputs[?OutputKey==`ChatApiUrl`].OutputValue" --output text)',
+            'echo "Testing REST API endpoint..."',
+            'curl -s -o /dev/null -w "%{http_code}" $POSTS_API_URL/posts | grep 200',
+            'echo "Testing WebSocket connection..."',
+            'npx wscat -c $CHAT_WS_URL -x \'{"action":"sendmessage","message":"hello"}\'',
           ],
         }),
       ],

@@ -2,6 +2,13 @@ import json
 import os
 import boto3
 from botocore.exceptions import ClientError
+from decimal import Decimal
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
 
 # Initialize the DynamoDB resource using boto3
 # This makes it easier to work with items and attributes
@@ -32,7 +39,7 @@ def lambda_handler(event, context):
         return {
             'statusCode': 200,
             'headers': headers,
-            'body': json.dumps(items)
+            'body': json.dumps(items, cls=DecimalEncoder)
         }
     except ClientError as e:
         print(f"Error fetching posts: {e.response['Error']['Message']}")
