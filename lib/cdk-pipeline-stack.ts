@@ -54,8 +54,8 @@ export class CdkPipelineStack extends cdk.Stack {
           'curl -Ssf $POSTS_API_URL/posts || exit 1',
 
           'echo "Testing WebSocket API..."',
-          '# Example using wscat (install via npm i -g wscat)',
-          'wscat -c $CHAT_API_URL -e "connect test-message"',
+          'npm ci',
+          'node test.websocket.ts',
           ],
           envFromCfnOutputs: {
               POSTS_API_URL: communityHubStack.node.tryFindChild('PostsApiUrl') as cdk.CfnOutput,
