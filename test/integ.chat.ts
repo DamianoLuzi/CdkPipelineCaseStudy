@@ -1,4 +1,3 @@
-import * as cdk from 'aws-cdk-lib';
 import { App, Stack } from 'aws-cdk-lib';
 import { CdkChatConstruct } from '../lib/chat-construct';
 import { CdkAnalyticsConstruct } from '../lib/analytics-construct'; 

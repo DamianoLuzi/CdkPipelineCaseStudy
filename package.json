@@ -16,7 +16,6 @@
     "@aws-cdk/integ-runner": "^2.190.0",
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
-    "aws-cdk": "2.1022.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
@@ -25,7 +24,7 @@
   "dependencies": {
     "@aws-cdk/integ-tests-alpha": "^2.212.0-alpha.0",
     "@aws-solutions-constructs/aws-lambda-eventbridge": "^2.90.4",
-    "aws-cdk-lib": "2.212.0",
+    "aws-cdk-lib": "^2.212.0",
     "constructs": "^10.0.0",
     "ls": "^0.2.1"
   }

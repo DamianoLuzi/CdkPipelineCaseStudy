@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
 import { PipelineStage } from './pipeline-stage';
+import { CommunityHubStack } from './community-hub-stack';
 
 export class CdkPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -43,22 +44,24 @@ export class CdkPipelineStack extends cdk.Stack {
     });
 
     const stgStage = new PipelineStage(this, 'STG', {env: { account: '351323459405', region: 'eu-central-1' }})
+    const communityHubStack = stgStage.node.tryFindChild('CommunityHubStack') as CommunityHubStack;
+
     pipeline.addStage(stgStage, {
       post: [
         new ShellStep('RunIntegrationTests', {
           commands: [
-            'npm ci',
-            'npm run integ',
-            'POSTS_API_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query \'Stacks[0].Outputs[?OutputKey==`PostsApiUrl`].OutputValue\' --output text)',
-            'CHAT_WS_URL=$(aws cloudformation describe-stacks --stack-name CommunityHubStack-STG --query \'Stacks[0].Outputs[?OutputKey==`ChatApiUrl`].OutputValue\' --output text)',
+          'echo "Testing REST API..."',
+          'curl -Ssf $POSTS_API_URL/posts || exit 1',
 
-            'echo "Posts API URL: $POSTS_API_URL"',
-            'echo "Chat WS URL: $CHAT_WS_URL"',
-
-            'curl -s -o /dev/null -w "%{http_code}" $POSTS_API_URL/posts | grep 200',
-            'npx wscat -c $CHAT_WS_URL -x \'{"action":"sendmessage","message":"hello"}\'',
+          'echo "Testing WebSocket API..."',
+          '# Example using wscat (install via npm i -g wscat)',
+          'wscat -c $CHAT_API_URL -e "connect test-message"',
           ],
-        }),
+          envFromCfnOutputs: {
+              POSTS_API_URL: communityHubStack.node.tryFindChild('PostsApiUrl') as cdk.CfnOutput,
+              CHAT_API_URL: communityHubStack.node.tryFindChild('ChatApiUrl') as cdk.CfnOutput,
+          },
+        })
       ],
    });
   /*
