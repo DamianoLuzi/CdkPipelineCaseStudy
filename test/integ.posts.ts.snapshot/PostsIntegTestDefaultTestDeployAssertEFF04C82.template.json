@@ -1,0 +1,175 @@
+{
+ "Resources": {
+  "HttpApiCallf57eb76408bbbf3f0470042c55eb2b26": {
+   "Type": "Custom::DeployAssert@HttpCall",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "SingletonFunction1488541a7b23466481b69b4408076b81HandlerCD40AE9F",
+      "Arn"
+     ]
+    },
+    "parameters": {
+     "url": {
+      "Fn::Join": [
+       "",
+       [
+        "https://",
+        {
+         "Fn::ImportValue": "PostsStack:ExportsOutputRefPostsConstructPostsApi7FFD3DFBA10285A0"
+        },
+        ".execute-api.",
+        {
+         "Ref": "AWS::Region"
+        },
+        ".",
+        {
+         "Ref": "AWS::URLSuffix"
+        },
+        "/",
+        {
+         "Fn::ImportValue": "PostsStack:ExportsOutputRefPostsConstructPostsApiDeploymentStageprod2713B945AF4F7FCD"
+        },
+        "/posts"
+       ]
+      ]
+     },
+     "fetchOptions": {
+      "method": "POST",
+      "headers": {
+       "Content-Type": "application/json"
+      },
+      "body": "{\"content\":\"This is a test post that is intentionally long to meet the 300-character validation rule set in the Lambda function. The purpose of this test is to ensure that the post content is properly analyzed for toxicity and then stored in the DynamoDB table as expected. The content must be long enough to be considered a \\\"review\\\" by the Lambda function, so we will fill it with enough text to surpass the minimum length requirement. This ensures our test is accurate and robust. The content must be long enough to be considered a \\\"review\\\" by the Lambda function, so we will fill it with enough text to surpass the minimum length requirement. This ensures our test is accurate and robust.\",\"author\":\"TestUser\"}"
+     }
+    },
+    "flattenResponse": "false",
+    "salt": "1755939643188"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  },
+  "SingletonFunction1488541a7b23466481b69b4408076b81Role37ABCE73": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   }
+  },
+  "SingletonFunction1488541a7b23466481b69b4408076b81HandlerCD40AE9F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "nodejs22.x",
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "7131a84a4415494610e808e07b00bedc7d2578a973f5069309ad6a8a74cf00db.zip"
+    },
+    "Timeout": 120,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "SingletonFunction1488541a7b23466481b69b4408076b81Role37ABCE73",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "HttpApiCallde2dbd10b795a447b32c9ba7b82feea1": {
+   "Type": "Custom::DeployAssert@HttpCall",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "SingletonFunction1488541a7b23466481b69b4408076b81HandlerCD40AE9F",
+      "Arn"
+     ]
+    },
+    "parameters": {
+     "url": {
+      "Fn::Join": [
+       "",
+       [
+        "https://",
+        {
+         "Fn::ImportValue": "PostsStack:ExportsOutputRefPostsConstructPostsApi7FFD3DFBA10285A0"
+        },
+        ".execute-api.",
+        {
+         "Ref": "AWS::Region"
+        },
+        ".",
+        {
+         "Ref": "AWS::URLSuffix"
+        },
+        "/",
+        {
+         "Fn::ImportValue": "PostsStack:ExportsOutputRefPostsConstructPostsApiDeploymentStageprod2713B945AF4F7FCD"
+        },
+        "/posts"
+       ]
+      ]
+     },
+     "fetchOptions": {
+      "method": "GET",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    },
+    "flattenResponse": "false",
+    "salt": "1755939643188"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete"
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

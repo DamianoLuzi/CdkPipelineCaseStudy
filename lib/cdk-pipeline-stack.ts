@@ -11,9 +11,6 @@ export class CdkPipelineStack extends cdk.Stack {
     const pipeline = new CodePipeline(this,"Pipeline", {
       pipelineName: 'CaseStudyCodePipeline',
       synth: new ShellStep('Synth', {
-        /* input: CodePipelineSource.gitHub(
-          'DamianoLuzi/CDKChatApp','main'
-        ), */
         input: CodePipelineSource.connection(
           'DamianoLuzi/CdkPipelineCaseStudy','main',{
             connectionArn: 'arn:aws:codeconnections:us-east-1:718579638605:connection/500ced3a-c591-4bad-9545-b6d2b66de1c3',
@@ -23,11 +20,10 @@ export class CdkPipelineStack extends cdk.Stack {
         commands: [
           'npm ci',
           'npm run build',
-          //'npm test',
           'npx cdk synth',
         ],
       }),
-      crossAccountKeys: true, // Set to true if you need cross-account deployments
+      crossAccountKeys: true, // cross-account deployments
     });
 
     const devStage =  new PipelineStage(this, 'DEV', {env: { account: '799201157016', region: 'eu-west-3' }});
@@ -52,10 +48,9 @@ export class CdkPipelineStack extends cdk.Stack {
           commands: [
           'echo "Testing REST API..."',
           'curl -Ssf $POSTS_API_URL/posts || exit 1',
-
           'echo "Testing WebSocket API..."',
           'npm ci',
-          'node test.websocket.ts',
+          'npx ts-node test.websocket.ts',
           ],
           envFromCfnOutputs: {
               POSTS_API_URL: communityHubStack.node.tryFindChild('PostsApiUrl') as cdk.CfnOutput,

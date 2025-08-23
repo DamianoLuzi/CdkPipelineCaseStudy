@@ -7,6 +7,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as pipes from 'aws-cdk-lib/aws-pipes';
+import path from 'path';
 
 interface CdkPostsConstructProps extends cdk.StackProps {
   eventBus: events.EventBus;
@@ -46,7 +47,7 @@ export class CdkPostsConstruct extends Construct {
       functionName: 'postModerationFunction',
       runtime: lambda.Runtime.PYTHON_3_13,
       architecture: lambda.Architecture.ARM_64,
-      code: lambda.Code.fromAsset('lambda/analyze'), 
+      code: lambda.Code.fromAsset(path.join(__dirname, '..', `lambda/analyze`)),
       handler: 'handler.lambda_handler',
       memorySize: 128,
       timeout: Duration.seconds(3),
@@ -60,7 +61,7 @@ export class CdkPostsConstruct extends Construct {
       functionName: 'postFetchFunction',
       runtime: lambda.Runtime.PYTHON_3_13,
       architecture: lambda.Architecture.ARM_64,
-      code: lambda.Code.fromAsset('lambda/fetch'), 
+      code: lambda.Code.fromAsset(path.join(__dirname, '..', `lambda/fetch`)),
       handler: 'handler.lambda_handler',
       memorySize: 128,
       timeout: Duration.seconds(3),
@@ -111,7 +112,6 @@ export class CdkPostsConstruct extends Construct {
       assumedBy: new iam.ServicePrincipal('pipes.amazonaws.com'),
     });
 
-    // Add necessary permissions for the pipe to read from the DynamoDB stream
     pipeRole.addToPolicy(
         new iam.PolicyStatement({
             actions: [

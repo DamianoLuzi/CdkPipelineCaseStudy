@@ -1,0 +1,13 @@
+{
+  "version": "48.0.0",
+  "testCases": {
+    "PostsIntegTest/DefaultTest": {
+      "stacks": [
+        "PostsStack"
+      ],
+      "assertionStack": "PostsIntegTest/DefaultTest/DeployAssert",
+      "assertionStackName": "PostsIntegTestDefaultTestDeployAssertEFF04C82"
+    }
+  },
+  "minimumCliVersion": "2.1025.0"
+}
