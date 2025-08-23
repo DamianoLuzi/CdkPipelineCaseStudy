@@ -50,7 +50,7 @@ export class CdkPipelineStack extends cdk.Stack {
           'curl -Ssf $POSTS_API_URL/posts || exit 1',
           'echo "Testing WebSocket API..."',
           'npm ci',
-          'npx ts-node test.websocket.ts',
+          'npx ts-node test/test.websocket.ts',
           ],
           envFromCfnOutputs: {
               POSTS_API_URL: communityHubStack.node.tryFindChild('PostsApiUrl') as cdk.CfnOutput,
